@@ -45,6 +45,16 @@ def populate():
     add_page(cat=frame_cat,
         title="Flask",
         url="http://flask.pocoo.org")
+	
+	
+	me_cat = add_cat("0706209w")
+	
+	add_page(cat = me_cat,
+			title='Github',
+			url='https://github.com/0706209w/')
+	add_page(cat = student_cat,
+		title='pythonanywhere',
+		url = "https://www.pythonanywhere.com/user/0706209w/consoles/")
 
     # Print out what we have added to the user.
     for c in Category.objects.all():
