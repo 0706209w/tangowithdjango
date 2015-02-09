@@ -4,15 +4,12 @@ from django.conf import settings
 from rango import views
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'tango_with_django_project.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^rango/', include('rango.urls')), # ADD THIS NEW TUPLE!
     url(r'^$', views.index, name='index'),
     url(r'^about/$', views.about, name='about'),
-    url(r'^category/(?P<category_name_slug>[\w\-]+)/$', views.category, name='category'),)  # New!
+    url(r'^rango/category/(?P<category_name_slug>[\w\-]+)/$', views.category, name='category'),)  # New!
 
 if settings.DEBUG:
     urlpatterns += patterns(
