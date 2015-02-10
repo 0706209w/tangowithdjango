@@ -11,8 +11,8 @@ from django.contrib.auth import logout
 
 @login_required
 def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
-
+    context_dict = {'boldmessage': ""}
+    return render(request, 'rango/restricted.html', context_dict)
 
 # Use the login_required() decorator to ensure only those logged in can access the view.
 @login_required
