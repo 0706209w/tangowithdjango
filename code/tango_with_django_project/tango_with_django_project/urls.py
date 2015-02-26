@@ -2,21 +2,21 @@ from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from django.conf import settings
 from rango import views
+from registration.backends.simple.views import RegistrationView
+
+# Create a new class that redirects the user to the index page, if successful at logging
+class MyRegistrationView(RegistrationView):
+    def get_success_url(self,request, user):
+        return '/rango/'
+
 
 urlpatterns = patterns('',
-
-	url(r'^admin/', include(admin.site.urls)),
-	url(r'^rango/', include('rango.urls')), 
-	url(r'^$', views.index, name='index'),
-	url(r'^about/$', views.about, name='about'),
-	url(r'^rango/category/(?P<category_name_slug>[\w\-]+)/$', views.category, name='category'),
-	url(r'^rango/add_category/$', views.add_category, name='add_category'), 
-	url(r'^rango/category/(?P<category_name_slug>[\w\-]+)/add_page/$', views.add_page, name='add_page'),
-	url(r'^rango/register/$', views.register, name='register'),
-	url(r'^rango/login/$', views.user_login, name='login'),
-	url(r'^rango/restricted/', views.restricted, name='restricted'),
-	url(r'^rango/logout/$', views.user_logout, name='logout'),
-	)  # New!
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^rango/', include('rango.urls')),
+        #Add in this url pattern to override the default pattern in accounts.
+    url(r'^accounts/register/$', MyRegistrationView.as_view(), name='registration_register'),
+    (r'^accounts/', include('registration.backends.simple.urls')),
+)
 
 if settings.DEBUG:
     urlpatterns += patterns(

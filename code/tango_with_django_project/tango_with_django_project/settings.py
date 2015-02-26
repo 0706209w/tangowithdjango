@@ -23,11 +23,14 @@ TEMPLATE_DIRS = [
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
+#SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'k#k=dt!j-v296!9zn5h=vvqmk5$-hpv7h##3e!s2b$90#kq-&p'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+
 
 TEMPLATE_DEBUG = True
 
@@ -45,6 +48,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
 	'rango',
+	'registration', # add in the registration package
 )
 
 MIDDLEWARE_CLASSES = (
@@ -96,3 +100,10 @@ STATICFILES_DIRS = (
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media') # Absolute path to the media directory
+
+REGISTRATION_OPEN = True                # If True, users can register
+ACCOUNT_ACTIVATION_DAYS = 7     # One-week activation window; you may, of course, use a different value.
+REGISTRATION_AUTO_LOGIN = True  # If True, the user will be automatically logged in.
+LOGIN_REDIRECT_URL = '/rango/'  # The page you want users to arrive at after they successful log in
+LOGIN_URL = '/accounts/login/'  # The page users are directed to if they are not logged in,
+                                # and are trying to access pages requiring authentication
