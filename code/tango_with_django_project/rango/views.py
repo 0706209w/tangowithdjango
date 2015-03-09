@@ -1,7 +1,7 @@
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from rango.models import Category
-from rango.models import Page
+from rango.models import Page, UserProfile
 from rango.forms import CategoryForm
 from rango.forms import PageForm
 from rango.forms import UserForm, UserProfileForm
@@ -9,6 +9,10 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout
 from datetime import datetime
+from rango.bing_search import run_query
+from django.shortcuts import redirect
+from django.contrib.auth.models import User
+from django.template import RequestContext
 
 
 @login_required
@@ -78,7 +82,8 @@ def category(request, category_name_slug):
 
     # Create a context dictionary which we can pass to the template rendering engine.
     context_dict = {}
-
+    context_dict['result_list'] = None
+    context_dict['query'] = "Search Here!"
     try:
         # Can we find a category name slug with the given name?
         # If we can't, the .get() method raises a DoesNotExist exception.
@@ -89,7 +94,7 @@ def category(request, category_name_slug):
 
         # Retrieve all of the associated pages.
         # Note that filter returns >= 1 model instance.
-		pages = Page.objects.filter(category=category)
+		pages = Page.objects.filter(category=category).order_by('-views')
 
         # Adds our results list to the template context under name pages.
 		context_dict['pages'] = pages
@@ -100,7 +105,16 @@ def category(request, category_name_slug):
         # We get here if we didn't find the specified category.
         # Don't do anything - the template displays the "no category" message for us.
         pass
+	
 
+    if request.method == 'POST':
+        query = request.POST.get('query')
+        if query:
+			query = query.strip()
+            # Run our Bing function to get the results list!
+     			result_list = run_query(query)
+			context_dict['result_list'] = result_list
+			context_dict['query'] = query
     # Go render the response and return it to the client.
     return render(request, 'rango/category.html', context_dict)
 
@@ -157,3 +171,102 @@ def about(request):
 
     return render(request, 'rango/about.html', {'visits':count})
    
+def search(request):
+
+    result_list = []
+
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
+    return render(request, 'rango/search.html', {'result_list': result_list})
+	
+def track_url(request):
+	context = RequestContext(request) 
+	page_id = None 
+	url = '/rango/' 
+	if request.method == 'GET': 
+		if 'page_id' in request.GET:
+			page_id = request.GET['page_id']
+			try: 
+				page = Page.objects.get(id=page_id) 
+				page.views = page.views + 1 
+				page.save() 
+				url = page.url 
+			except: 
+				pass 
+				
+	return redirect(url)
+	
+from rango.forms import UserForm, UserProfileForm
+
+	
+def register_profile(request):
+	# Request the context.
+	#context = RequestContext(request)
+	#cat_list = get_category_list()
+	context_dict = {}
+	#context_dict['cat_list'] = cat_list
+	#	Boolean telling us whether registration was successful or not.
+	# Initially False; presume it was a failure until proven otherwise!
+	registered = False
+	# If HTTP POST, we wish to process form data and create an account.
+	if request.method == 'POST':
+		# Grab raw form data - making use of both FormModels.
+		user_form = UserForm(data=request.POST)
+		profile_form = UserProfileForm(data=request.POST)
+		# Two valid forms?
+		if user_form.is_valid() and profile_form.is_valid():
+			# Save the user's form data. That one is easy.
+			user = user_form.save()
+			# Now a user account exists, we hash the password with the set_password() method.
+			# Then we can update the account with .save().
+			user.set_password(user.password)
+			user.save()
+			# Now we can sort out the UserProfile instance.
+			# We'll be setting values for the instance ourselves, so commit=False prevents Django from saving the instance automatically.
+			profile = profile_form.save(commit=False)
+			profile.user = user
+			# Profile picture supplied? If so, we put it in the new UserProfile.
+			if 'picture' in request.FILES:
+				profile.picture = request.FILES['picture']
+				# Now we save the model instance!
+				profile.save()
+				# We can say registration was successful.
+				registered = True
+				# Invalid form(s) - just print errors to the terminal.
+		else:
+			print user_form.errors, profile_form.errors
+			# Not a HTTP POST, so we render the two ModelForms to allow a user to input their data.
+	else:
+		user_form = UserForm()
+		profile_form = UserProfileForm()
+			
+	context_dict['user_form'] = user_form
+	context_dict['profile_form']= profile_form
+	context_dict['registered'] = registered
+			
+			# Render and return!
+	return render(request,
+		'rango/profile_registration.html',
+		context_dict)
+		
+def profile(request):
+	#context = RequestContext(request)
+	#cat_list = get_category_list()
+	#context_dict = {'cat_list': cat_list}
+	#profile_form = UserProfileForm(data=request.POST)
+	#user = profile_form.save()
+	
+	context_dict = {}
+	#u = user.objects.get(username=request.user)
+	try:
+		up = UserProfile.objects.get(user=u)
+	except:
+		up = None
+	#context_dict['user'] = u
+	context_dict['userprofile'] = up
+	return render(request, 'rango/profile.html', context_dict)
